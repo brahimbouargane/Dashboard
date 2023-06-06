@@ -70,11 +70,11 @@ const Theme = (colors) => {
             contrastText: greyColors[100]
         },
         info: {
-            lighter: cyan[0],
-            light: cyan[3],
-            main: cyan[5],
-            dark: cyan[7],
-            darker: cyan[9],
+            lighter: blue[0],
+            light: blue[3],
+            main: blue[5],
+            dark: blue[7],
+            darker: blue[9],
             contrastText
         },
         success: {

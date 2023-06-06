@@ -5,7 +5,7 @@ import axios from 'axios';
 const API = process.env.REACT_APP_BASE_URL;
 
 const login = async (email, password) => {
-    const response = await axios.post(`${API}/api/login`, {
+    const response = await axios.post(`${API}login`, {
         email,
         password
     });
@@ -20,7 +20,7 @@ const logout = async () => {
     const token = localStorage.getItem('token');
     await axios
         .post(
-            `${API}/api/logout`,
+            `${API}logout`,
             {},
             {
                 headers: {

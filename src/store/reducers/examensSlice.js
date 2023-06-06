@@ -5,10 +5,10 @@ const initialState = { records: [], loading: false, error: null, record: null };
 const API = process.env.REACT_APP_BASE_URL;
 const token = localStorage.getItem('token');
 
-export const fetchUsers = createAsyncThunk('users/fetchUsers', async (_, thunkAPI) => {
+export const fetchExamens = createAsyncThunk('examens/fetchExamens', async (_, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
-        const res = await axios.get(`${API}User`, {
+        const res = await axios.get(`${API}Examen`, {
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
         });
         return res.data;
@@ -17,21 +17,21 @@ export const fetchUsers = createAsyncThunk('users/fetchUsers', async (_, thunkAP
     }
 });
 
-export const fetchUser = createAsyncThunk('users/fetchUser', async (id, thunkAPI) => {
-    const { rejectWithValue } = thunkAPI;
-    try {
-        const res = await fetch(`${API}User/${id}`);
-        const data = await res.json();
-        return data;
-    } catch (error) {
-        return rejectWithValue(error.message);
-    }
-});
+// export const fetchUser = createAsyncThunk('contrats/fetchUser', async (id, thunkAPI) => {
+//     const { rejectWithValue } = thunkAPI;
+//     try {
+//         const res = await fetch(`${API}User/${id}`);
+//         const data = await res.json();
+//         return data;
+//     } catch (error) {
+//         return rejectWithValue(error.message);
+//     }
+// });
 
-export const deleteUser = createAsyncThunk('users/deleteUser', async (id, thunkAPI) => {
+export const deleteExamen = createAsyncThunk('examens/deleteExamen', async (id, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
-        await fetch(`${API}User/${id}`, {
+        await fetch(`${API}Examen/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -41,14 +41,14 @@ export const deleteUser = createAsyncThunk('users/deleteUser', async (id, thunkA
     }
 });
 
-export const insertUser = createAsyncThunk('users/insertUser', async (item, thunkAPI) => {
+export const insertExamen = createAsyncThunk('examens/insertExamen', async (item, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     // const { auth } = getState();
     // item.userId = auth.id;
 
     try {
         const res = await axios.post(
-            `${API}User`,
+            `${API}Examen`,
             {
                 email: item.email,
                 name: item.name,
@@ -72,11 +72,11 @@ export const insertUser = createAsyncThunk('users/insertUser', async (item, thun
     }
 });
 
-export const editUser = createAsyncThunk('users/editUser', async (item, thunkAPI) => {
+export const editExamen = createAsyncThunk('examens/editExamen', async (item, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
         const res = await axios.patch(
-            `${API}User/${item.id}`,
+            `${API}Examen/${item.id}`,
             {
                 email: item.email,
                 name: item.name,
@@ -99,8 +99,8 @@ export const editUser = createAsyncThunk('users/editUser', async (item, thunkAPI
     }
 });
 
-const userSlice = createSlice({
-    name: 'users',
+const examenSlice = createSlice({
+    name: 'examens',
     initialState,
     reducers: {
         cleanRecord: (state) => {
@@ -110,72 +110,72 @@ const userSlice = createSlice({
 
     extraReducers: {
         //get one user post
-        [fetchUser.pending]: (state) => {
-            state.loading = true;
-            state.error = null;
-        },
-        [fetchUser.fulfilled]: (state, action) => {
-            state.loading = false;
-            state.record = action.payload;
-        },
-        [fetchUser.rejected]: (state, action) => {
-            state.loading = false;
-            state.error = action.payload;
-        },
+        // [fetchUser.pending]: (state) => {
+        //     state.loading = true;
+        //     state.error = null;
+        // },
+        // [fetchUser.fulfilled]: (state, action) => {
+        //     state.loading = false;
+        //     state.record = action.payload;
+        // },
+        // [fetchUser.rejected]: (state, action) => {
+        //     state.loading = false;
+        //     state.error = action.payload;
+        // },
         //fetch users
-        [fetchUsers.pending]: (state) => {
+        [fetchExamens.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [fetchUsers.fulfilled]: (state, action) => {
+        [fetchExamens.fulfilled]: (state, action) => {
             state.loading = false;
             state.records = action.payload;
         },
-        [fetchUsers.rejected]: (state, action) => {
+        [fetchExamens.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         },
         //create user
-        [insertUser.pending]: (state) => {
+        [insertExamen.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [insertUser.fulfilled]: (state, action) => {
+        [insertExamen.fulfilled]: (state, action) => {
             state.loading = false;
             state.records.push(action.payload);
         },
-        [insertUser.rejected]: (state, action) => {
+        [insertExamen.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         },
         //delete user
-        [deleteUser.pending]: (state) => {
+        [deleteExamen.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [deleteUser.fulfilled]: (state, action) => {
+        [deleteExamen.fulfilled]: (state, action) => {
             state.loading = false;
             state.records = state.records.filter((el) => el.id !== action.payload);
         },
-        [deleteUser.rejected]: (state, action) => {
+        [deleteExamen.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         },
 
         //edit user
-        [editUser.pending]: (state) => {
+        [editExamen.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [editUser.fulfilled]: (state, action) => {
+        [editExamen.fulfilled]: (state, action) => {
             state.loading = false;
             state.record = action.payload;
         },
-        [editUser.rejected]: (state, action) => {
+        [editExamen.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         }
     }
 });
 
-export default userSlice.reducer;
+export default examenSlice.reducer;

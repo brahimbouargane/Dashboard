@@ -24,7 +24,7 @@ const AnalyticEcommerce = ({ color, title, count, percentage, isLoss, extra }) =
                     </Typography>
                 </Grid>
                 {percentage && (
-                    <Grid item>
+                    <Grid item wrap="nowrap">
                         <Chip
                             variant="combined"
                             color={color}

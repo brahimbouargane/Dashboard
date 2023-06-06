@@ -5,10 +5,10 @@ const initialState = { records: [], loading: false, error: null, record: null };
 const API = process.env.REACT_APP_BASE_URL;
 const token = localStorage.getItem('token');
 
-export const fetchUsers = createAsyncThunk('users/fetchUsers', async (_, thunkAPI) => {
+export const fetchVehicules = createAsyncThunk('Vehicules/fetchVehicules', async (_, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
-        const res = await axios.get(`${API}User`, {
+        const res = await axios.get(`${API}Vehicule`, {
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
         });
         return res.data;
@@ -17,21 +17,21 @@ export const fetchUsers = createAsyncThunk('users/fetchUsers', async (_, thunkAP
     }
 });
 
-export const fetchUser = createAsyncThunk('users/fetchUser', async (id, thunkAPI) => {
-    const { rejectWithValue } = thunkAPI;
-    try {
-        const res = await fetch(`${API}User/${id}`);
-        const data = await res.json();
-        return data;
-    } catch (error) {
-        return rejectWithValue(error.message);
-    }
-});
+// export const fetchUser = createAsyncThunk('users/fetchUser', async (id, thunkAPI) => {
+//     const { rejectWithValue } = thunkAPI;
+//     try {
+//         const res = await fetch(`${API}User/${id}`);
+//         const data = await res.json();
+//         return data;
+//     } catch (error) {
+//         return rejectWithValue(error.message);
+//     }
+// });
 
-export const deleteUser = createAsyncThunk('users/deleteUser', async (id, thunkAPI) => {
+export const deleteVehicule = createAsyncThunk('Vehicules/deleteVehicule', async (id, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
-        await fetch(`${API}User/${id}`, {
+        await fetch(`${API}Vehicule/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -41,20 +41,20 @@ export const deleteUser = createAsyncThunk('users/deleteUser', async (id, thunkA
     }
 });
 
-export const insertUser = createAsyncThunk('users/insertUser', async (item, thunkAPI) => {
+export const insertVehicule = createAsyncThunk('vehicules/insertVehicule ', async (item, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     // const { auth } = getState();
     // item.userId = auth.id;
 
     try {
         const res = await axios.post(
-            `${API}User`,
+            `${API}Vehicule`,
             {
-                email: item.email,
-                name: item.name,
-                telephone: item.telephone,
-                password: item.password,
-                role_id: item.role_id
+                // email: item.email,
+                // name: item.name,
+                // telephone: item.telephone,
+                // password: item.password,
+                // role_id: item.role_id
             },
             {
                 body: JSON.stringify(item),
@@ -72,16 +72,16 @@ export const insertUser = createAsyncThunk('users/insertUser', async (item, thun
     }
 });
 
-export const editUser = createAsyncThunk('users/editUser', async (item, thunkAPI) => {
+export const editVehicule = createAsyncThunk('Vehicules/editVehicule ', async (item, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
         const res = await axios.patch(
-            `${API}User/${item.id}`,
+            `${API}Vehicule/${item.id}`,
             {
-                email: item.email,
-                name: item.name,
-                telephone: item.telephone,
-                role_id: item.role_id
+                // email: item.email,
+                // name: item.name,
+                // telephone: item.telephone,
+                // role_id: item.role_id
             },
             {
                 body: JSON.stringify(item),
@@ -99,8 +99,8 @@ export const editUser = createAsyncThunk('users/editUser', async (item, thunkAPI
     }
 });
 
-const userSlice = createSlice({
-    name: 'users',
+const vehiculeSlice = createSlice({
+    name: 'Vehicules',
     initialState,
     reducers: {
         cleanRecord: (state) => {
@@ -110,72 +110,72 @@ const userSlice = createSlice({
 
     extraReducers: {
         //get one user post
-        [fetchUser.pending]: (state) => {
-            state.loading = true;
-            state.error = null;
-        },
-        [fetchUser.fulfilled]: (state, action) => {
-            state.loading = false;
-            state.record = action.payload;
-        },
-        [fetchUser.rejected]: (state, action) => {
-            state.loading = false;
-            state.error = action.payload;
-        },
+        // [fetchUser.pending]: (state) => {
+        //     state.loading = true;
+        //     state.error = null;
+        // },
+        // [fetchUser.fulfilled]: (state, action) => {
+        //     state.loading = false;
+        //     state.record = action.payload;
+        // },
+        // [fetchUser.rejected]: (state, action) => {
+        //     state.loading = false;
+        //     state.error = action.payload;
+        // },
         //fetch users
-        [fetchUsers.pending]: (state) => {
+        [fetchVehicules.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [fetchUsers.fulfilled]: (state, action) => {
+        [fetchVehicules.fulfilled]: (state, action) => {
             state.loading = false;
             state.records = action.payload;
         },
-        [fetchUsers.rejected]: (state, action) => {
+        [fetchVehicules.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         },
         //create user
-        [insertUser.pending]: (state) => {
+        [insertVehicule.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [insertUser.fulfilled]: (state, action) => {
+        [insertVehicule.fulfilled]: (state, action) => {
             state.loading = false;
             state.records.push(action.payload);
         },
-        [insertUser.rejected]: (state, action) => {
+        [insertVehicule.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         },
         //delete user
-        [deleteUser.pending]: (state) => {
+        [deleteVehicule.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [deleteUser.fulfilled]: (state, action) => {
+        [deleteVehicule.fulfilled]: (state, action) => {
             state.loading = false;
             state.records = state.records.filter((el) => el.id !== action.payload);
         },
-        [deleteUser.rejected]: (state, action) => {
+        [deleteVehicule.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         },
 
         //edit user
-        [editUser.pending]: (state) => {
+        [editVehicule.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [editUser.fulfilled]: (state, action) => {
+        [editVehicule.fulfilled]: (state, action) => {
             state.loading = false;
             state.record = action.payload;
         },
-        [editUser.rejected]: (state, action) => {
+        [editVehicule.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         }
     }
 });
 
-export default userSlice.reducer;
+export default vehiculeSlice.reducer;

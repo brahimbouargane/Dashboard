@@ -47,6 +47,7 @@ import {
     DialogTitle,
     DialogActions
 } from '@mui/material';
+import { Upload, message } from 'antd';
 
 // third-party
 import NumberFormat from 'react-number-format';
@@ -56,8 +57,7 @@ import { Formik } from 'formik';
 // project import
 import Dot from 'components/@extended/Dot';
 import AnimateButton from 'components/@extended/AnimateButton';
-import { fetchUsers, deleteUser, insertUser, editUser } from '../../../store/reducers/usersSlice';
-import useUserDetails from 'hooks/useUserDetails';
+import { fetchSocietes, deleteSociete, insertSociete, editSociete } from '../../../store/reducers/societeSlice';
 
 // Ant Design Icon
 import {
@@ -69,25 +69,14 @@ import {
     CloseCircleOutlined,
     EyeOutlined,
     EyeInvisibleOutlined,
-    CloseOutlined
+    CloseOutlined,
+    CameraOutlined,
+    LoadingOutlined
 } from '@ant-design/icons';
 
-function createData(id, avatar, name, email, password, telephone, role, actions) {
-    return { id, avatar, name, email, password, telephone, role, actions };
+function createData(id, logo, societe, email, responsable, adresse, telephone, fix, actions) {
+    return { id, logo, societe, email, responsable, adresse, telephone, fix, actions };
 }
-
-// const rows = [
-//     createData(1, user1, 'Camera Lens', 'ex@gmail.com', '+2126678890', 2),
-//     createData(2, user1, 'Laptop', 'ex@gmail.com', '+2126678890', 0),
-//     createData(3, user1, 'Mobile', 'ex@gmail.com', '+2126678890', 1),
-//     createData(4, user1, 'Handset', 'ex@gmail.com', '+2126678890', 1),
-//     createData(5, user1, 'Computer Accessories', 'ex@gmail.com', '+2126678890', 1),
-//     createData(6, user1, 'TV', 'ex@gmail.com', '+2126678890', 0),
-//     createData(7, user1, 'Keyboard', 'ex@gmail.com', '+2126678890', 2),
-//     createData(8, user1, 'Mouse', 'ex@gmail.com', '+2126678890', 2),
-//     createData(9, user1, 'Desktop', 'ex@gmail.com', '+2126678890', 1),
-//     createData(10, user1, 'Chair', 'ex@gmail.com', '+2126678890', 0)
-// ];
 
 function descendingComparator(a, b, orderBy) {
     if (b[orderBy] < a[orderBy]) {
@@ -114,6 +103,14 @@ function stableSort(array, comparator) {
     });
     return stabilizedThis.map((el) => el[0]);
 }
+const getBase64 = (file) =>
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+    });
+
 // ==============================|| STYLED COMPONENTS ||============================== //
 
 const DeleteIcon = styled.a`
@@ -141,10 +138,16 @@ const headCells = [
     //     label: '#'
     // },
     {
-        id: 'name',
+        id: 'logo',
         align: 'left',
         disablePadding: false,
-        label: 'USER NAME'
+        label: 'LOGO'
+    },
+    {
+        id: 'societe',
+        align: 'left',
+        disablePadding: false,
+        label: 'SOCIETE'
     },
     {
         id: 'email',
@@ -153,16 +156,28 @@ const headCells = [
         label: 'EMAIL'
     },
     {
+        id: 'responsable',
+        align: 'left',
+        disablePadding: false,
+        label: 'RESPONSABLE'
+    },
+    {
+        id: 'adresse',
+        align: 'left',
+        disablePadding: false,
+        label: 'ADRESSE'
+    },
+    {
         id: 'telephone',
         align: 'left',
         disablePadding: false,
-        label: 'CONTACT'
+        label: 'TELEPHONE'
     },
     {
-        id: 'role',
+        id: 'fix',
         align: 'left',
         disablePadding: false,
-        label: 'ROLE'
+        label: 'FIX'
     },
     {
         id: 'actions',
@@ -172,25 +187,68 @@ const headCells = [
     }
 ];
 
-// ==============================|| ADD USER MODAL & HEAD TABLE - HEADER ||============================== //
+// ==============================|| ADD societes MODAL & HEAD TABLE - HEADER ||============================== //
 
 function FilterTableHeader() {
     const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [baseUrl, setBaseUrl] = useState('');
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewImage, setPreviewImage] = useState('');
+    const [previewTitle, setPreviewTitle] = useState('');
+    const [fileList, setFileList] = useState([]);
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const theme = useTheme();
 
     const phoneRegExp = /^((\\+[1-9]{1,4}[ \\-]*)|(\\([0-9]{2,3}\\)[ \\-]*)|([0-9]{2,4})[ \\-]*)*?[0-9]{3,4}?[ \\-]*[0-9]{3,4}?$/;
-    const [showPassword, setShowPassword] = useState(false);
-    const handleClickShowPassword = () => {
-        setShowPassword(!showPassword);
-    };
-    const handleMouseDownPassword = (event) => {
-        event.preventDefault();
-    };
+
     const handleOpen = () => setOpen(!open);
     const handleClose = () => {
         setOpen(!open);
     };
+
+    const beforeUpload = (file) => {
+        return false;
+    };
+    const handleCancel = () => setPreviewOpen(false);
+    const handlePreview = async (file) => {
+        if (!file.url && !file.preview) {
+            file.preview = await getBase64(file.originFileObj);
+        }
+        setPreviewImage(file.url || file.preview);
+        setPreviewOpen(true);
+        setPreviewTitle(file.name || file.url.substring(file.url.lastIndexOf('/') + 1));
+    };
+
+    // const handleChangee = ({ fileList: newFileList }) => setFileList(newFileList);
+    const handleChangee = (newFileList, setFieldValue) => {
+        // Loop through each uploaded file
+        newFileList.forEach(async (file) => {
+            if (!file.url && !file.preview) {
+                file.preview = await getBase64(file.originFileObj);
+            }
+            const base64Image = file.preview; // Extract the base64 representation
+            setFieldValue('logo', base64Image);
+            setBaseUrl(base64Image); // Log the base64 image to the console
+        });
+
+        setFileList(newFileList);
+    };
+    useEffect(() => {}, [baseUrl]);
+
+    const uploadButton = (
+        <div>
+            <PlusOutlined />
+            <div
+                style={{
+                    marginTop: 8
+                }}
+            >
+                Upload
+            </div>
+        </div>
+    );
 
     const style = {
         position: 'absolute',
@@ -221,7 +279,7 @@ function FilterTableHeader() {
                 }}
             />
             <Button variant="contained" startIcon={<PlusOutlined />} onClick={handleOpen}>
-                Add User
+                Add Societe
             </Button>
             <Modal
                 keepMounted
@@ -233,42 +291,42 @@ function FilterTableHeader() {
                 <Box sx={style}>
                     <Formik
                         initialValues={{
-                            name: '',
+                            logo: baseUrl,
+                            societe: '',
                             email: '',
+                            responsable: '',
+                            adresse: '',
                             telephone: '',
-                            password: '',
-                            role: '',
-                            submit: null
+                            fix: ''
                         }}
                         validationSchema={Yup.object().shape({
-                            name: Yup.string().max(30).required('First Name is required'),
+                            societe: Yup.string().max(30).required('Societe Name is required'),
                             telephone: Yup.string()
                                 .matches(phoneRegExp, 'Phone number is not valid')
-                                .required('Phone number is required')
+                                .required('telephone is required')
                                 .min(10)
                                 .max(10),
-                            // .test('len', 'Must be exactly 10 characters', (val) => val.length === 10),
-                            password: Yup.string()
-                                .min(8, 'Must be greater than 8 characters')
-                                .max(16, 'must be smaller than 16 characters')
-                                .required('Password is required'),
+                            fix: Yup.string().matches(phoneRegExp, 'Phone number is not valid').required('fix is required').min(10).max(10),
                             email: Yup.string().email('Must be a valid email').required('Email is required'),
-                            role: Yup.string().ensure().required('Role is required!')
+                            responsable: Yup.string().required('Responsable is required!')
                         })}
-                        onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+                        onSubmit={(values, { setErrors, setStatus, setSubmitting }) => {
+                            console.log('Form Data:', values);
                             dispatch(
-                                insertUser({
-                                    name: values.name,
+                                insertSociete({
+                                    logo: baseUrl,
+                                    societe: values.societe,
                                     email: values.email,
+                                    responsable: values.responsable,
+                                    adresse: values.adresse,
                                     telephone: values.telephone,
-                                    password: values.password,
-                                    role_id: values.role
+                                    fix: values.fix
                                 })
                             )
                                 .unwrap()
                                 .then(() => {
-                                    dispatch(fetchUsers());
-                                    navigate('/users');
+                                    dispatch(fetchSocietes());
+                                    navigate('/societes');
                                     handleClose();
                                 })
                                 .catch((err) => {
@@ -276,47 +334,153 @@ function FilterTableHeader() {
                                 });
                         }}
                     >
-                        {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, handleReset, touched, values, resetForm }) => (
+                        {({
+                            errors,
+                            handleBlur,
+                            handleChange,
+                            setFieldValue,
+                            handleSubmit,
+                            isSubmitting,
+                            handleReset,
+                            touched,
+                            values,
+                            resetForm
+                        }) => (
                             <form noValidate onSubmit={handleSubmit}>
-                                <Typography variant="h4" sx={{ padding: '25px', borderBottom: '1px solid rgb(240, 240, 240)' }}>
-                                    Add User
+                                <Typography variant="h4" sx={{ padding: '15px 25px', borderBottom: '1px solid rgb(240, 240, 240)' }}>
+                                    Add Societe
                                 </Typography>
-                                <Grid container spacing={3} sx={{ padding: '10px 20px' }}>
-                                    <Grid item xs={12}>
-                                        <Grid item xs={12} sx={{ mt: 1 }}>
+                                <Grid container spacing={3} sx={{ padding: '10px 40px', margin: '0px 0px' }}>
+                                    <Grid item xs={12} style={{ paddingLeft: '0px' }} md={4}>
+                                        <InputLabel>Logo*</InputLabel>
+                                        <Upload
+                                            beforeUpload={beforeUpload}
+                                            listType="picture-circle"
+                                            fileList={fileList}
+                                            onPreview={handlePreview}
+                                            onChange={(e) => handleChangee(e.fileList, setFieldValue)}
+                                            accept=".png, .jpg, .jpeg"
+                                        >
+                                            {fileList.length ? null : uploadButton}
+                                        </Upload>
+                                        <Modal open={previewOpen} title={previewTitle} footer={null} onClick={handleCancel}>
+                                            <img
+                                                alt="example"
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: '50%',
+                                                    transform: 'translate(-50%, -50%)',
+                                                    width: '30%'
+                                                }}
+                                                src={previewImage}
+                                            />
+                                        </Modal>
+                                    </Grid>
+                                    <Grid container spacing={2} xs={12} md={8}>
+                                        <Grid item xs={6} md={12}>
                                             <Stack spacing={1}>
-                                                <InputLabel htmlFor="user-signup">Name*</InputLabel>
+                                                <InputLabel htmlFor="societe">Societe*</InputLabel>
                                                 <OutlinedInput
-                                                    id="user-login"
-                                                    type="name"
-                                                    value={values.name}
-                                                    name="name"
+                                                    id="societe"
+                                                    type="text"
+                                                    value={values.societe}
+                                                    name="societe"
                                                     onBlur={handleBlur}
                                                     onChange={handleChange}
-                                                    placeholder="Name"
+                                                    placeholder="Societe"
                                                     fullWidth
-                                                    error={Boolean(touched.name && errors.name)}
+                                                    error={Boolean(touched.societe && errors.societe)}
                                                 />
-                                                {touched.name && errors.name && (
-                                                    <FormHelperText error id="helper-text-name-signup">
-                                                        {errors.name}
+                                                {touched.societe && errors.societe && (
+                                                    <FormHelperText error id="helper-text-societe">
+                                                        {errors.societe}
                                                     </FormHelperText>
                                                 )}
                                             </Stack>
                                         </Grid>
-                                        <Grid item xs={12} sx={{ mt: 1 }}>
+                                        <Grid item xs={6} md={12}>
                                             <Stack spacing={1}>
-                                                <InputLabel htmlFor="telephone-signup">Phone Number*</InputLabel>
+                                                <InputLabel htmlFor="email">Email*</InputLabel>
+                                                <OutlinedInput
+                                                    fullWidth
+                                                    error={Boolean(touched.email && errors.email)}
+                                                    id="email"
+                                                    type="email"
+                                                    value={values.email}
+                                                    name="email"
+                                                    onBlur={handleBlur}
+                                                    onChange={handleChange}
+                                                    placeholder="***@***.com"
+                                                    inputProps={{}}
+                                                />
+                                                {touched.email && errors.email && (
+                                                    <FormHelperText error id="helper-text-email">
+                                                        {errors.email}
+                                                    </FormHelperText>
+                                                )}
+                                            </Stack>
+                                        </Grid>
+
+                                        <Grid item xs={6} md={12}>
+                                            <Stack spacing={1}>
+                                                <InputLabel htmlFor="responsable">Responsable*</InputLabel>
+                                                <OutlinedInput
+                                                    fullWidth
+                                                    error={Boolean(touched.responsable && errors.responsable)}
+                                                    id="responsable"
+                                                    type="text"
+                                                    value={values.responsable}
+                                                    name="responsable"
+                                                    onBlur={handleBlur}
+                                                    onChange={handleChange}
+                                                    placeholder=""
+                                                    inputProps={{}}
+                                                />
+                                                {touched.responsable && errors.responsable && (
+                                                    <FormHelperText error id="helper-text-responsable">
+                                                        {errors.responsable}
+                                                    </FormHelperText>
+                                                )}
+                                            </Stack>
+                                        </Grid>
+
+                                        <Grid item xs={6} md={12}>
+                                            <Stack spacing={1}>
+                                                <InputLabel htmlFor="adresse">Adresse*</InputLabel>
+                                                <OutlinedInput
+                                                    fullWidth
+                                                    error={Boolean(touched.adresse && errors.adresse)}
+                                                    id="adresse"
+                                                    type="text"
+                                                    value={values.adresse}
+                                                    name="adresse"
+                                                    onBlur={handleBlur}
+                                                    onChange={handleChange}
+                                                    placeholder=""
+                                                    inputProps={{}}
+                                                />
+                                                {touched.adresse && errors.adresse && (
+                                                    <FormHelperText error id="helper-text-adresse">
+                                                        {errors.adresse}
+                                                    </FormHelperText>
+                                                )}
+                                            </Stack>
+                                        </Grid>
+
+                                        <Grid item xs={6} md={12}>
+                                            <Stack spacing={1}>
+                                                <InputLabel htmlFor="telephone">Telephone*</InputLabel>
                                                 <OutlinedInput
                                                     fullWidth
                                                     error={Boolean(touched.telephone && errors.telephone)}
-                                                    // id="telephone-signup"
+                                                    id="telephone"
                                                     type="telephone"
                                                     value={values.telephone}
                                                     name="telephone"
                                                     onBlur={handleBlur}
                                                     onChange={handleChange}
-                                                    placeholder="Phone number"
+                                                    placeholder="06*******"
                                                     inputProps={{}}
                                                 />
                                                 {touched.telephone && errors.telephone && (
@@ -327,91 +491,24 @@ function FilterTableHeader() {
                                             </Stack>
                                         </Grid>
 
-                                        <Grid item xs={12} sx={{ mt: 1 }}>
+                                        <Grid item xs={6} md={12}>
                                             <Stack spacing={1}>
-                                                <InputLabel htmlFor="email-signup">Email*</InputLabel>
+                                                <InputLabel htmlFor="fix">Fix*</InputLabel>
                                                 <OutlinedInput
                                                     fullWidth
-                                                    error={Boolean(touched.email && errors.email)}
-                                                    id="email"
-                                                    type="email"
-                                                    value={values.email}
-                                                    name="email"
+                                                    error={Boolean(touched.fix && errors.fix)}
+                                                    id="fix"
+                                                    type="fix"
+                                                    value={values.fix}
+                                                    name="fix"
                                                     onBlur={handleBlur}
                                                     onChange={handleChange}
-                                                    placeholder="email@email.com"
+                                                    placeholder="05*******"
                                                     inputProps={{}}
                                                 />
-                                                {touched.email && errors.email && (
-                                                    <FormHelperText error id="helper-text-email-signup">
-                                                        {errors.email}
-                                                    </FormHelperText>
-                                                )}
-                                            </Stack>
-                                        </Grid>
-
-                                        <Grid item xs={12} sx={{ mt: 1 }}>
-                                            <Stack spacing={1}>
-                                                <InputLabel htmlFor="password-login">Password*</InputLabel>
-                                                <OutlinedInput
-                                                    fullWidth
-                                                    error={Boolean(touched.password && errors.password)}
-                                                    id="password"
-                                                    type={showPassword ? 'text' : 'password'}
-                                                    value={values.password}
-                                                    name="password"
-                                                    onBlur={handleBlur}
-                                                    onChange={handleChange}
-                                                    placeholder="Enter password"
-                                                    endAdornment={
-                                                        <InputAdornment position="end">
-                                                            <IconButton
-                                                                aria-label="toggle password visibility"
-                                                                onClick={handleClickShowPassword}
-                                                                onMouseDown={handleMouseDownPassword}
-                                                                edge="end"
-                                                                size="large"
-                                                            >
-                                                                {showPassword ? <EyeOutlined /> : <EyeInvisibleOutlined />}
-                                                            </IconButton>
-                                                        </InputAdornment>
-                                                    }
-                                                />
-                                                {touched.password && errors.password && (
-                                                    <FormHelperText error id="helper-text-password-signup">
-                                                        {errors.password}
-                                                    </FormHelperText>
-                                                )}
-                                            </Stack>
-                                        </Grid>
-
-                                        <Grid item xs={12} sx={{ mt: 1 }}>
-                                            <Stack spacing={1}>
-                                                <InputLabel htmlFor="role-signup">role*</InputLabel>
-
-                                                <FormControl>
-                                                    <Select
-                                                        fullWidth
-                                                        error={Boolean(touched.role && errors.role)}
-                                                        id="role"
-                                                        value={values.role}
-                                                        name="role"
-                                                        required
-                                                        onBlur={handleBlur}
-                                                        onChange={handleChange}
-                                                        inputProps={{ 'aria-label': 'Without label' }}
-                                                    >
-                                                        <MenuItem value="" sx={{ color: 'text.secondary' }}>
-                                                            Select role
-                                                        </MenuItem>
-                                                        <MenuItem value="1">Admin</MenuItem>
-                                                        <MenuItem value="2">Viewer</MenuItem>
-                                                        <MenuItem value="3">Editor</MenuItem>
-                                                    </Select>
-                                                </FormControl>
-                                                {touched.role && errors.role && (
-                                                    <FormHelperText error id="helper-text-role-signup">
-                                                        {errors.role}
+                                                {touched.fix && errors.fix && (
+                                                    <FormHelperText error id="helper-text-fix-signup">
+                                                        {errors.fix}
                                                     </FormHelperText>
                                                 )}
                                             </Stack>
@@ -436,7 +533,7 @@ function FilterTableHeader() {
                                             Cancel
                                         </Button>
                                         <Button variant="contained" type="submit">
-                                            Add User
+                                            Add Societe
                                         </Button>
                                     </Grid>
                                 </Grid>
@@ -454,12 +551,55 @@ function FilterTableHeader() {
 //     handleClose: PropTypes.func.isRequired
 // };
 // ==============================|| EDIT ||============================== //
-function EditUser({ open, handleClose, handleOpen, handleEdit, editItem }) {
+function EditSociete({ open, handleClose, handleOpen, handleEdit, editItem }) {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { records, loading, error } = useSelector((state) => state.users);
+    const [baseUrl, setBaseUrl] = useState('');
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewImage, setPreviewImage] = useState('');
+    const [previewTitle, setPreviewTitle] = useState('');
+    const [fileList, setFileList] = useState([]);
+    const { records, loading, error } = useSelector((state) => state.societes);
 
     const phoneRegExp = /^((\\+[1-9]{1,4}[ \\-]*)|(\\([0-9]{2,3}\\)[ \\-]*)|([0-9]{2,4})[ \\-]*)*?[0-9]{3,4}?[ \\-]*[0-9]{3,4}?$/;
+    const beforeUpload = (file) => {
+        return false;
+    };
+    const handleCancel = () => setPreviewOpen(false);
+    const handlePreview = async (file) => {
+        if (!file.url && !file.preview) {
+            file.preview = await getBase64(file.originFileObj);
+        }
+        setPreviewImage(file.url || file.preview);
+        setPreviewOpen(true);
+        setPreviewTitle(file.name || file.url.substring(file.url.lastIndexOf('/') + 1));
+    };
+
+    // const handleChangee = ({ fileList: newFileList }) => setFileList(newFileList);
+    const handleChangee = ({ fileList: newFileList }) => {
+        // Loop through each uploaded file
+        newFileList.forEach(async (file) => {
+            if (!file.url && !file.preview) {
+                file.preview = await getBase64(file.originFileObj);
+            }
+            const base64Image = file.preview; // Extract the base64 representation
+            setBaseUrl(base64Image); // Log the base64 image to the console
+        });
+
+        setFileList(newFileList);
+    };
+    const uploadButton = (
+        <div>
+            <PlusOutlined />
+            <div
+                style={{
+                    marginTop: 8
+                }}
+            >
+                Upload
+            </div>
+        </div>
+    );
 
     const style = {
         position: 'absolute',
@@ -485,66 +625,174 @@ function EditUser({ open, handleClose, handleOpen, handleEdit, editItem }) {
                     enableReinitialize={true}
                     initialValues={editItem}
                     validationSchema={Yup.object().shape({
-                        name: Yup.string().max(30).required('First Name is required'),
+                        societe: Yup.string().max(30).required('Societe Name is required'),
                         telephone: Yup.string()
                             .matches(phoneRegExp, 'Phone number is not valid')
-                            .required('Phone number is required')
+                            .required('telephone is required')
                             .min(10)
                             .max(10),
+                        fix: Yup.string().matches(phoneRegExp, 'Phone number is not valid').required('fix is required').min(10).max(10),
                         email: Yup.string().email('Must be a valid email').required('Email is required'),
-                        role: Yup.string().ensure().required('Role is required!')
+                        responsable: Yup.string().required('Responsable is required!')
                     })}
                     onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
-                        dispatch(editUser(values))
+                        dispatch(
+                            editSociete({
+                                id: values.id,
+                                logo: baseUrl,
+                                societe: values.societe,
+                                email: values.email,
+                                responsable: values.responsable,
+                                adresse: values.adresse,
+                                telephone: values.telephone,
+                                fix: values.fix
+                            })
+                        )
                             .unwrap()
                             .then(() => {
-                                dispatch(fetchUsers());
-                                navigate('/users');
+                                dispatch(fetchSocietes());
+                                navigate('/Societes');
                                 handleClose();
                             });
                     }}
                 >
                     {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, handleReset, touched, values, resetForm }) => (
                         <form noValidate onSubmit={handleSubmit}>
-                            <Typography variant="h4" sx={{ padding: '25px', borderBottom: '1px solid rgb(240, 240, 240)' }}>
-                                Edit User
+                            <Typography variant="h4" sx={{ padding: '15px 25px', borderBottom: '1px solid rgb(240, 240, 240)' }}>
+                                Edit Societe
                             </Typography>
-                            <Grid container spacing={3} sx={{ padding: '10px 20px' }}>
-                                <Grid item xs={12}>
-                                    <Grid item xs={12} sx={{ mt: 1 }}>
+                            <Grid container spacing={3} sx={{ padding: '10px 40px', margin: '0px 0px' }}>
+                                <Grid item xs={12} style={{ paddingLeft: '0px' }} md={4}>
+                                    <InputLabel>Logo*</InputLabel>
+                                    <Upload
+                                        beforeUpload={beforeUpload}
+                                        listType="picture-circle"
+                                        fileList={fileList}
+                                        onPreview={handlePreview}
+                                        onChange={handleChangee}
+                                        value={values.logo}
+                                        accept=".png, .jpg, .jpeg"
+                                    >
+                                        {fileList.length ? null : uploadButton}
+                                    </Upload>
+                                    <Modal open={previewOpen} title={previewTitle} footer={null} onClick={handleCancel}>
+                                        <img
+                                            alt="example"
+                                            style={{
+                                                position: 'absolute',
+                                                top: '50%',
+                                                left: '50%',
+                                                transform: 'translate(-50%, -50%)',
+                                                width: '30%'
+                                            }}
+                                            src={previewImage}
+                                        />
+                                    </Modal>
+                                </Grid>
+                                <Grid container spacing={2} xs={12} md={8}>
+                                    <Grid item xs={6} md={12}>
                                         <Stack spacing={1}>
-                                            <InputLabel htmlFor="user-signup">Name*</InputLabel>
+                                            <InputLabel htmlFor="societe">Societe*</InputLabel>
                                             <OutlinedInput
-                                                id="user-login"
-                                                type="name"
-                                                value={values.name}
-                                                name="name"
+                                                id="societe"
+                                                type="text"
+                                                value={values.societe}
+                                                name="societe"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
-                                                placeholder="Name"
+                                                placeholder="Societe"
                                                 fullWidth
-                                                error={Boolean(touched.name && errors.name)}
+                                                error={Boolean(touched.societe && errors.societe)}
                                             />
-                                            {touched.name && errors.name && (
-                                                <FormHelperText error id="helper-text-name-signup">
-                                                    {errors.name}
+                                            {touched.societe && errors.societe && (
+                                                <FormHelperText error id="helper-text-societe">
+                                                    {errors.societe}
                                                 </FormHelperText>
                                             )}
                                         </Stack>
                                     </Grid>
-                                    <Grid item xs={12} sx={{ mt: 1 }}>
+                                    <Grid item xs={6} md={12}>
                                         <Stack spacing={1}>
-                                            <InputLabel htmlFor="telephone-signup">Phone Number*</InputLabel>
+                                            <InputLabel htmlFor="email">Email*</InputLabel>
+                                            <OutlinedInput
+                                                fullWidth
+                                                error={Boolean(touched.email && errors.email)}
+                                                id="email"
+                                                type="email"
+                                                value={values.email}
+                                                name="email"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                placeholder="***@***.com"
+                                                inputProps={{}}
+                                            />
+                                            {touched.email && errors.email && (
+                                                <FormHelperText error id="helper-text-email">
+                                                    {errors.email}
+                                                </FormHelperText>
+                                            )}
+                                        </Stack>
+                                    </Grid>
+
+                                    <Grid item xs={6} md={12}>
+                                        <Stack spacing={1}>
+                                            <InputLabel htmlFor="responsable">Responsable*</InputLabel>
+                                            <OutlinedInput
+                                                fullWidth
+                                                error={Boolean(touched.responsable && errors.responsable)}
+                                                id="responsable"
+                                                type="text"
+                                                value={values.responsable}
+                                                name="responsable"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                placeholder=""
+                                                inputProps={{}}
+                                            />
+                                            {touched.responsable && errors.responsable && (
+                                                <FormHelperText error id="helper-text-responsable">
+                                                    {errors.responsable}
+                                                </FormHelperText>
+                                            )}
+                                        </Stack>
+                                    </Grid>
+
+                                    <Grid item xs={6} md={12}>
+                                        <Stack spacing={1}>
+                                            <InputLabel htmlFor="adresse">Adresse*</InputLabel>
+                                            <OutlinedInput
+                                                fullWidth
+                                                error={Boolean(touched.adresse && errors.adresse)}
+                                                id="adresse"
+                                                type="text"
+                                                value={values.adresse}
+                                                name="adresse"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                placeholder=""
+                                                inputProps={{}}
+                                            />
+                                            {touched.adresse && errors.adresse && (
+                                                <FormHelperText error id="helper-text-adresse">
+                                                    {errors.adresse}
+                                                </FormHelperText>
+                                            )}
+                                        </Stack>
+                                    </Grid>
+
+                                    <Grid item xs={6} md={12}>
+                                        <Stack spacing={1}>
+                                            <InputLabel htmlFor="telephone">Telephone*</InputLabel>
                                             <OutlinedInput
                                                 fullWidth
                                                 error={Boolean(touched.telephone && errors.telephone)}
-                                                id="telephone-signup"
+                                                id="telephone"
                                                 type="telephone"
                                                 value={values.telephone}
                                                 name="telephone"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
-                                                placeholder="Phone number"
+                                                placeholder="06*******"
                                                 inputProps={{}}
                                             />
                                             {touched.telephone && errors.telephone && (
@@ -555,56 +803,24 @@ function EditUser({ open, handleClose, handleOpen, handleEdit, editItem }) {
                                         </Stack>
                                     </Grid>
 
-                                    <Grid item xs={12} sx={{ mt: 1 }}>
+                                    <Grid item xs={6} md={12}>
                                         <Stack spacing={1}>
-                                            <InputLabel htmlFor="email-signup">Email*</InputLabel>
+                                            <InputLabel htmlFor="fix">Fix*</InputLabel>
                                             <OutlinedInput
                                                 fullWidth
-                                                error={Boolean(touched.email && errors.email)}
-                                                id="email"
-                                                type="email"
-                                                value={values.email}
-                                                name="email"
+                                                error={Boolean(touched.fix && errors.fix)}
+                                                id="fix"
+                                                type="fix"
+                                                value={values.fix}
+                                                name="fix"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
-                                                placeholder="email@email.com"
+                                                placeholder="05*******"
                                                 inputProps={{}}
                                             />
-                                            {touched.email && errors.email && (
-                                                <FormHelperText error id="helper-text-email-signup">
-                                                    {errors.email}
-                                                </FormHelperText>
-                                            )}
-                                        </Stack>
-                                    </Grid>
-
-                                    <Grid item xs={12} sx={{ mt: 1 }}>
-                                        <Stack spacing={1}>
-                                            <InputLabel htmlFor="role-signup">role*</InputLabel>
-
-                                            <FormControl>
-                                                <Select
-                                                    fullWidth
-                                                    error={Boolean(touched.role && errors.role)}
-                                                    id="role"
-                                                    value={values.role}
-                                                    name="role"
-                                                    required
-                                                    onBlur={handleBlur}
-                                                    onChange={handleChange}
-                                                    inputProps={{ 'aria-label': 'Without label' }}
-                                                >
-                                                    <MenuItem value="" sx={{ color: 'text.secondary' }}>
-                                                        Select role
-                                                    </MenuItem>
-                                                    <MenuItem value="1">Admin</MenuItem>
-                                                    <MenuItem value="2">Viewer</MenuItem>
-                                                    <MenuItem value="3">Editor</MenuItem>
-                                                </Select>
-                                            </FormControl>
-                                            {touched.role && errors.role && (
-                                                <FormHelperText error id="helper-text-role-signup">
-                                                    {errors.role}
+                                            {touched.fix && errors.fix && (
+                                                <FormHelperText error id="helper-text-fix-signup">
+                                                    {errors.fix}
                                                 </FormHelperText>
                                             )}
                                         </Stack>
@@ -629,7 +845,7 @@ function EditUser({ open, handleClose, handleOpen, handleEdit, editItem }) {
                                         Cancel
                                     </Button>
                                     <Button variant="contained" type="submit">
-                                        Edit User
+                                        Edit Societe
                                     </Button>
                                 </Grid>
                             </Grid>
@@ -664,7 +880,7 @@ function DeleteModal({ open, handleOpen, handleClose, handleDelete }) {
                         Cancel
                     </Button>
                     <Button variant="contained" onClick={handleDelete}>
-                        Delete User
+                        Delete Societe
                     </Button>
                 </DialogActions>
             </Box>
@@ -767,8 +983,8 @@ OrderStatus.propTypes = {
 
 // ==============================|| ORDER TABLE ||============================== //
 
-export default function Userslist() {
-    const { records, loading, error } = useSelector((state) => state.users);
+export default function Societeslist() {
+    const { records, loading, error } = useSelector((state) => state.societes);
     const rows = records;
 
     const [order] = useState('asc');
@@ -781,7 +997,17 @@ export default function Userslist() {
     const [page, setPage] = useState(0);
 
     const [rowsPerPage, setRowsPerPage] = useState(5);
-    const [editItem, setEditItem] = useState({ id: '', name: '', email: '', telephone: '', password: '', role_id: '', submit: null });
+    const [editItem, setEditItem] = useState({
+        id: '',
+        logo: '',
+        societe: '',
+        email: '',
+        responsable: '',
+        adresse: '',
+        telephone: '',
+        fix: '',
+        submit: null
+    });
     const dispatch = useDispatch();
     const theme = useTheme();
 
@@ -789,22 +1015,23 @@ export default function Userslist() {
     const [visibleRows, setvisibleRows] = useState(InitialRows);
     useMemo(() => setvisibleRows(rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)), [page, rowsPerPage, records]);
 
-    const deleteRecord = useCallback((id) => dispatch(deleteUser(id)), [dispatch]);
+    const deleteRecord = useCallback((id) => dispatch(deleteSociete(id)), [dispatch]);
 
     const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
 
     useEffect(() => {
-        dispatch(fetchUsers());
+        dispatch(fetchSocietes());
     }, [dispatch]);
 
     const OpenEdit = () => setOpenEdit(!openEdit);
     const closeEdit = () => setOpenEdit(!openEdit);
     const editHandler = (item) => {
         setEditItem(item);
+        console.log(item);
         OpenEdit();
     };
     const handleEdit = () => {
-        // editRecord(editItem);
+        editRecord(editItem);
         closeEdit();
         setEditItem();
     };
@@ -864,7 +1091,13 @@ export default function Userslist() {
                 >
                     <OrderTableHead order={order} orderBy={orderBy} onSelectAllClick={handleSelectAllClick} />
                     <DeleteModal open={openDelete} handleOpen={OpenDelete} handleClose={closeDelete} handleDelete={handleDelete} />
-                    <EditUser open={openEdit} handleOpen={OpenEdit} handleClose={closeEdit} handleEdit={handleEdit} editItem={editItem} />
+                    <EditSociete
+                        open={openEdit}
+                        handleOpen={OpenEdit}
+                        handleClose={closeEdit}
+                        handleEdit={handleEdit}
+                        editItem={editItem}
+                    />
                     <TableBody>
                         {visibleRows.map((row, index) => {
                             const isItemSelected = isSelected(row.id);
@@ -891,17 +1124,16 @@ export default function Userslist() {
                                     </TableCell>
                                     <TableCell align="left">
                                         <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                                            {/* <Box>
-                                                <Avatar src={user1} alt="user1" />
-                                            </Box> */}
-                                            <Box sx={{ ml: 1 }}>{row.name}</Box>
+                                            {/* <Avatar src={`https://liya.is-tech.app/storage/${row.logo}`} /> */}
+                                            <Avatar src={row.logo} />
                                         </Box>
                                     </TableCell>
+                                    <TableCell align="left">{row.societe}</TableCell>
                                     <TableCell align="left">{row.email}</TableCell>
+                                    <TableCell align="left">{row.responsable}</TableCell>
+                                    <TableCell align="left">{row.adresse}</TableCell>
                                     <TableCell align="left">{row.telephone}</TableCell>
-                                    <TableCell align="left">
-                                        <OrderStatus status={row.role_id} />
-                                    </TableCell>
+                                    <TableCell align="left">{row.fix}</TableCell>
                                     <TableCell sx={{ display: 'flex', justifyContent: 'flex-start', gap: '20px', padding: '23px' }}>
                                         <EditIcon style={{ cursor: 'pointer' }} onClick={() => editHandler(row)}>
                                             <EditOutlined style={{ color: theme.palette.info.main, cursor: 'pointer', fontSize: '15px' }} />

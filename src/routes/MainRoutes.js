@@ -18,6 +18,10 @@ const Shadow = Loadable(lazy(() => import('pages/components-overview/Shadow')));
 const AntIcons = Loadable(lazy(() => import('pages/components-overview/AntIcons')));
 const Userslist = Loadable(lazy(() => import('pages/components-overview/users/List')));
 const Calendar = Loadable(lazy(() => import('pages/components-overview/Calendar')));
+const Vehicules = Loadable(lazy(() => import('pages/components-overview/vehicules')));
+const Societes = Loadable(lazy(() => import('pages/components-overview/societes')));
+const Contrats = Loadable(lazy(() => import('pages/components-overview/contrats')));
+const Examens = Loadable(lazy(() => import('pages/components-overview/examens')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -30,22 +34,39 @@ const MainRoutes = {
             element: <DashboardDefault />
         },
         {
-            path: 'users/list',
+            path: 'users',
             element: <Userslist />
         },
         {
-            path: 'color',
-            element: <Color />
+            path: 'vehicules',
+            element: <Vehicules />
         },
         {
-            path: 'dashboard',
-            children: [
-                {
-                    path: 'default',
-                    element: <DashboardDefault />
-                }
-            ]
+            path: 'societes',
+            element: <Societes />
         },
+        {
+            path: 'contrats',
+            element: <Contrats />
+        },
+        {
+            path: 'examens',
+            element: <Examens />
+        },
+        {
+            path: 'interventions',
+            element: <Calendar />
+        },
+
+        // {
+        //     path: 'dashboard',
+        //     children: [
+        //         {
+        //             path: 'default',
+        //             element: <DashboardDefault />
+        //         }
+        //     ]
+        // },
         {
             path: 'sample-page',
             element: <SamplePage />
@@ -63,9 +84,10 @@ const MainRoutes = {
             element: <AntIcons />
         },
         {
-            path: 'calendar',
-            element: <Calendar />
+            path: 'color',
+            element: <Color />
         },
+
         { path: '*', element: <Navigate to="/404" /> }
     ]
 };

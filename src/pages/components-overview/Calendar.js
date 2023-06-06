@@ -31,12 +31,7 @@ import ComponentSkeleton from './ComponentSkeleton';
 import '../../assets/third-party/fullCalendar.css';
 
 // third party
-// import FullCalendar, { formatData } from '@fullcalendar/react'; // must go before plugins
-// import dayGridPlugin from '@fullcalendar/daygrid'; // a plugin!
-// import timeGridPlugin from '@fullcalendar/timegrid';
-// import interactionPlugin from '@fullcalendar/interaction';
-// import listPlugin from '@fullcalendar/list';
-// import multiMonthPlugin from '@fullcalendar/multimonth';
+
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
 import axios from 'axios';
@@ -206,14 +201,14 @@ const Calendar = () => {
 
     return (
         <ComponentSkeleton>
-            <Box>
-                <Box className="calendar">
+            <Grid xs={12} rowSpacing={4.5} columnSpacing={2.75}>
+                <Grid item direction="row" justifyContent="center" alignItems="center" style={{ display: 'flex' }}>
                     <Button
                         onClick={() => {
                             setYear(year - 1);
                         }}
                     >
-                        <LeftOutlined />
+                        <LeftOutlined style={{ fontSize: '20px' }} />
                     </Button>
                     <Typography variant="h3">{year}</Typography>
                     <Button
@@ -221,30 +216,31 @@ const Calendar = () => {
                             setYear(year + 1);
                         }}
                     >
-                        <RightOutlined />
+                        <RightOutlined style={{ fontSize: '20px' }} />
                     </Button>
-                </Box>
-                <Box className="monthsGrid">
+                </Grid>
+                <Grid item xs={12} contentSX={{ p: 2.25 }}>
                     {monthNames.map((monthName) => (
-                        <Box key={monthName} className="month">
-                            <Typography variant="h4" sx={{ mb: 2 }}>
+                        <Grid xs={12} key={monthName} className="month">
+                            <Typography variant="h4" sx={{ mb: 1 }}>
                                 {monthName}
                             </Typography>
                             {datesByMonth[monthName].map((date) => (
-                                <>
-                                    <Chip
-                                        sx={{ m: 1, p: 1 }}
-                                        label={`Contract ID: ${date.contratId}. Date Intervention: ${date.dateString}. Vehicule Matricule: ${date.vehicule}. societe: ${date.societe}`}
-                                        color={date.statusColor === 'Terminer' ? 'success' : 'warning'}
-                                        key={`${date.contratId}-${date.dateString}`}
-                                    />
-                                    <br />
-                                </>
+                                <Grid
+                                    item
+                                    bgcolor={date.statusColor === 'Terminer' ? '#4caf50' : '#fbc02d'}
+                                    sx={{ borderRadius: '5px', p: 0.7, m: 0.5 }}
+                                >
+                                    <Typography
+                                        color="#fff"
+                                        variant="caption"
+                                    >{`Contract ID: ${date.contratId}. Date Intervention: ${date.dateString}. Vehicule Matricule: ${date.vehicule}. societe: ${date.societe}`}</Typography>
+                                </Grid>
                             ))}
-                        </Box>
+                        </Grid>
                     ))}
-                </Box>
-            </Box>
+                </Grid>
+            </Grid>
             <AddIntervention open={open} handleOpen={handleOpen} handleClose={handleClose} />
         </ComponentSkeleton>
     );

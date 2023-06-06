@@ -5,10 +5,10 @@ const initialState = { records: [], loading: false, error: null, record: null };
 const API = process.env.REACT_APP_BASE_URL;
 const token = localStorage.getItem('token');
 
-export const fetchUsers = createAsyncThunk('users/fetchUsers', async (_, thunkAPI) => {
+export const fetchContrats = createAsyncThunk('contrats/fetchContrats', async (_, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
-        const res = await axios.get(`${API}User`, {
+        const res = await axios.get(`${API}Contrat`, {
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
         });
         return res.data;
@@ -17,21 +17,21 @@ export const fetchUsers = createAsyncThunk('users/fetchUsers', async (_, thunkAP
     }
 });
 
-export const fetchUser = createAsyncThunk('users/fetchUser', async (id, thunkAPI) => {
-    const { rejectWithValue } = thunkAPI;
-    try {
-        const res = await fetch(`${API}User/${id}`);
-        const data = await res.json();
-        return data;
-    } catch (error) {
-        return rejectWithValue(error.message);
-    }
-});
+// export const fetchUser = createAsyncThunk('users/fetchUser', async (id, thunkAPI) => {
+//     const { rejectWithValue } = thunkAPI;
+//     try {
+//         const res = await fetch(`${API}User/${id}`);
+//         const data = await res.json();
+//         return data;
+//     } catch (error) {
+//         return rejectWithValue(error.message);
+//     }
+// });
 
-export const deleteUser = createAsyncThunk('users/deleteUser', async (id, thunkAPI) => {
+export const deleteContrat = createAsyncThunk('contrats/deleteContrat', async (id, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
-        await fetch(`${API}User/${id}`, {
+        await fetch(`${API}Contrat/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -41,20 +41,22 @@ export const deleteUser = createAsyncThunk('users/deleteUser', async (id, thunkA
     }
 });
 
-export const insertUser = createAsyncThunk('users/insertUser', async (item, thunkAPI) => {
+export const insertContrat = createAsyncThunk('contrats/insertContrat', async (item, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     // const { auth } = getState();
     // item.userId = auth.id;
 
     try {
         const res = await axios.post(
-            `${API}User`,
+            `${API}Contrat`,
             {
-                email: item.email,
-                name: item.name,
-                telephone: item.telephone,
-                password: item.password,
-                role_id: item.role_id
+                ref: item.ref,
+                societe_id: item.societe_id,
+                vehicule_id: item.vehicule_id,
+                intervention_chaque: item.intervention_chaque,
+                date_debut: item.date_debut,
+                date_fin: item.date_fin,
+                status_id: item.status_id
             },
             {
                 body: JSON.stringify(item),
@@ -72,16 +74,19 @@ export const insertUser = createAsyncThunk('users/insertUser', async (item, thun
     }
 });
 
-export const editUser = createAsyncThunk('users/editUser', async (item, thunkAPI) => {
+export const editContrat = createAsyncThunk('contrats/editContart', async (item, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
         const res = await axios.patch(
-            `${API}User/${item.id}`,
+            `${API}Contrat/${item.id}`,
             {
-                email: item.email,
-                name: item.name,
-                telephone: item.telephone,
-                role_id: item.role_id
+                ref: item.ref,
+                societe_id: item.societe_id,
+                vehicule_id: item.vehicule_id,
+                intervention_chaque: item.intervention_chaque,
+                date_debut: item.date_debut,
+                date_fin: item.date_fin,
+                status_id: item.status_id
             },
             {
                 body: JSON.stringify(item),
@@ -99,8 +104,8 @@ export const editUser = createAsyncThunk('users/editUser', async (item, thunkAPI
     }
 });
 
-const userSlice = createSlice({
-    name: 'users',
+const contratSlice = createSlice({
+    name: 'Contrats',
     initialState,
     reducers: {
         cleanRecord: (state) => {
@@ -110,72 +115,72 @@ const userSlice = createSlice({
 
     extraReducers: {
         //get one user post
-        [fetchUser.pending]: (state) => {
+        [fetchContrats.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [fetchUser.fulfilled]: (state, action) => {
+        [fetchContrats.fulfilled]: (state, action) => {
             state.loading = false;
-            state.record = action.payload;
+            state.records = action.payload;
         },
-        [fetchUser.rejected]: (state, action) => {
+        [fetchContrats.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         },
         //fetch users
-        [fetchUsers.pending]: (state) => {
-            state.loading = true;
-            state.error = null;
-        },
-        [fetchUsers.fulfilled]: (state, action) => {
-            state.loading = false;
-            state.records = action.payload;
-        },
-        [fetchUsers.rejected]: (state, action) => {
-            state.loading = false;
-            state.error = action.payload;
-        },
+        // [fetchUsers.pending]: (state) => {
+        //     state.loading = true;
+        //     state.error = null;
+        // },
+        // [fetchUsers.fulfilled]: (state, action) => {
+        //     state.loading = false;
+        //     state.records = action.payload;
+        // },
+        // [fetchUsers.rejected]: (state, action) => {
+        //     state.loading = false;
+        //     state.error = action.payload;
+        // },
         //create user
-        [insertUser.pending]: (state) => {
+        [insertContrat.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [insertUser.fulfilled]: (state, action) => {
+        [insertContrat.fulfilled]: (state, action) => {
             state.loading = false;
             state.records.push(action.payload);
         },
-        [insertUser.rejected]: (state, action) => {
+        [insertContrat.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         },
         //delete user
-        [deleteUser.pending]: (state) => {
+        [deleteContrat.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [deleteUser.fulfilled]: (state, action) => {
+        [deleteContrat.fulfilled]: (state, action) => {
             state.loading = false;
             state.records = state.records.filter((el) => el.id !== action.payload);
         },
-        [deleteUser.rejected]: (state, action) => {
+        [deleteContrat.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         },
 
         //edit user
-        [editUser.pending]: (state) => {
+        [editContrat.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [editUser.fulfilled]: (state, action) => {
+        [editContrat.fulfilled]: (state, action) => {
             state.loading = false;
             state.record = action.payload;
         },
-        [editUser.rejected]: (state, action) => {
+        [editContrat.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         }
     }
 });
 
-export default userSlice.reducer;
+export default contratSlice.reducer;

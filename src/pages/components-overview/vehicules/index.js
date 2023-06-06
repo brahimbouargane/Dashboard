@@ -47,6 +47,7 @@ import {
     DialogTitle,
     DialogActions
 } from '@mui/material';
+import { Upload, message } from 'antd';
 
 // third-party
 import NumberFormat from 'react-number-format';
@@ -56,8 +57,7 @@ import { Formik } from 'formik';
 // project import
 import Dot from 'components/@extended/Dot';
 import AnimateButton from 'components/@extended/AnimateButton';
-import { fetchUsers, deleteUser, insertUser, editUser } from '../../../store/reducers/usersSlice';
-import useUserDetails from 'hooks/useUserDetails';
+import { fetchVehicules, deleteVehicule, insertVehicule, editVehicule } from '../../../store/reducers/vehiculeSlice';
 
 // Ant Design Icon
 import {
@@ -69,25 +69,14 @@ import {
     CloseCircleOutlined,
     EyeOutlined,
     EyeInvisibleOutlined,
-    CloseOutlined
+    CloseOutlined,
+    CameraOutlined,
+    LoadingOutlined
 } from '@ant-design/icons';
 
-function createData(id, avatar, name, email, password, telephone, role, actions) {
-    return { id, avatar, name, email, password, telephone, role, actions };
+function createData(id, image, matricule, numero_serie, marque, date_circulation, capacite, typevehicule_id, status, actions) {
+    return { id, image, matricule, numero_serie, marque, date_circulation, capacite, typevehicule_id, status, actions };
 }
-
-// const rows = [
-//     createData(1, user1, 'Camera Lens', 'ex@gmail.com', '+2126678890', 2),
-//     createData(2, user1, 'Laptop', 'ex@gmail.com', '+2126678890', 0),
-//     createData(3, user1, 'Mobile', 'ex@gmail.com', '+2126678890', 1),
-//     createData(4, user1, 'Handset', 'ex@gmail.com', '+2126678890', 1),
-//     createData(5, user1, 'Computer Accessories', 'ex@gmail.com', '+2126678890', 1),
-//     createData(6, user1, 'TV', 'ex@gmail.com', '+2126678890', 0),
-//     createData(7, user1, 'Keyboard', 'ex@gmail.com', '+2126678890', 2),
-//     createData(8, user1, 'Mouse', 'ex@gmail.com', '+2126678890', 2),
-//     createData(9, user1, 'Desktop', 'ex@gmail.com', '+2126678890', 1),
-//     createData(10, user1, 'Chair', 'ex@gmail.com', '+2126678890', 0)
-// ];
 
 function descendingComparator(a, b, orderBy) {
     if (b[orderBy] < a[orderBy]) {
@@ -114,6 +103,13 @@ function stableSort(array, comparator) {
     });
     return stabilizedThis.map((el) => el[0]);
 }
+const getBase64 = (file) =>
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+    });
 // ==============================|| STYLED COMPONENTS ||============================== //
 
 const DeleteIcon = styled.a`
@@ -141,28 +137,52 @@ const headCells = [
     //     label: '#'
     // },
     {
-        id: 'name',
+        id: 'image',
         align: 'left',
         disablePadding: false,
-        label: 'USER NAME'
+        label: 'IMAGE'
     },
     {
-        id: 'email',
+        id: 'matricule',
         align: 'left',
         disablePadding: false,
-        label: 'EMAIL'
+        label: 'MATRICULE'
     },
     {
-        id: 'telephone',
+        id: 'numero_serie',
         align: 'left',
         disablePadding: false,
-        label: 'CONTACT'
+        label: 'NUMERO SERIE'
     },
     {
-        id: 'role',
+        id: 'marque',
         align: 'left',
         disablePadding: false,
-        label: 'ROLE'
+        label: 'MARQUE'
+    },
+    {
+        id: 'date_circulation',
+        align: 'left',
+        disablePadding: false,
+        label: 'DATE CIRCULATION'
+    },
+    {
+        id: 'capacite',
+        align: 'left',
+        disablePadding: false,
+        label: 'CAPACITE'
+    },
+    {
+        id: 'typevehicule',
+        align: 'left',
+        disablePadding: false,
+        label: 'TYPE VEHICULE'
+    },
+    {
+        id: 'status',
+        align: 'left',
+        disablePadding: false,
+        label: 'STATUS'
     },
     {
         id: 'actions',
@@ -172,10 +192,15 @@ const headCells = [
     }
 ];
 
-// ==============================|| ADD USER MODAL & HEAD TABLE - HEADER ||============================== //
+// ==============================|| ADD Vehicules MODAL & HEAD TABLE - HEADER ||============================== //
 
 function FilterTableHeader() {
     const [open, setOpen] = useState(false);
+    const [baseUrl, setBaseUrl] = useState('');
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewImage, setPreviewImage] = useState('');
+    const [previewTitle, setPreviewTitle] = useState('');
+    const [fileList, setFileList] = useState([]);
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
@@ -191,6 +216,45 @@ function FilterTableHeader() {
     const handleClose = () => {
         setOpen(!open);
     };
+    const beforeUpload = (file) => {
+        return false;
+    };
+    const handleCancel = () => setPreviewOpen(false);
+    const handlePreview = async (file) => {
+        if (!file.url && !file.preview) {
+            file.preview = await getBase64(file.originFileObj);
+        }
+        setPreviewImage(file.url || file.preview);
+        setPreviewOpen(true);
+        setPreviewTitle(file.name || file.url.substring(file.url.lastIndexOf('/') + 1));
+    };
+
+    // const handleChangee = ({ fileList: newFileList }) => setFileList(newFileList);
+    const handleChangee = ({ fileList: newFileList }) => {
+        // Loop through each uploaded file
+        newFileList.forEach(async (file) => {
+            if (!file.url && !file.preview) {
+                file.preview = await getBase64(file.originFileObj);
+            }
+            const base64Image = file.preview; // Extract the base64 representation
+            setBaseUrl(base64Image); // Log the base64 image to the console
+        });
+
+        setFileList(newFileList);
+    };
+
+    const uploadButton = (
+        <div>
+            <PlusOutlined />
+            <div
+                style={{
+                    marginTop: 8
+                }}
+            >
+                Upload
+            </div>
+        </div>
+    );
 
     const style = {
         position: 'absolute',
@@ -221,7 +285,7 @@ function FilterTableHeader() {
                 }}
             />
             <Button variant="contained" startIcon={<PlusOutlined />} onClick={handleOpen}>
-                Add User
+                Add Vehicule
             </Button>
             <Modal
                 keepMounted
@@ -233,11 +297,14 @@ function FilterTableHeader() {
                 <Box sx={style}>
                     <Formik
                         initialValues={{
-                            name: '',
-                            email: '',
-                            telephone: '',
-                            password: '',
-                            role: '',
+                            image: baseUrl,
+                            matricule: '',
+                            numero_serie: '',
+                            marque: '',
+                            date_circulation: '',
+                            capacite: '',
+                            typevehicule_id: '',
+                            status: '',
                             submit: null
                         }}
                         validationSchema={Yup.object().shape({
@@ -257,18 +324,21 @@ function FilterTableHeader() {
                         })}
                         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
                             dispatch(
-                                insertUser({
-                                    name: values.name,
-                                    email: values.email,
-                                    telephone: values.telephone,
-                                    password: values.password,
-                                    role_id: values.role
+                                insertVehicule({
+                                    image: baseUrl,
+                                    matricule: values.matricule,
+                                    numero_serie: values.numero_serie,
+                                    marque: values.marque,
+                                    date_circulation: values.date_circulation,
+                                    capacite: values.capacite,
+                                    typevehicule_id: values.typevehicule_id,
+                                    status: values.status
                                 })
                             )
                                 .unwrap()
                                 .then(() => {
-                                    dispatch(fetchUsers());
-                                    navigate('/users');
+                                    dispatch(fetchVehicules());
+                                    navigate('/vehicules');
                                     handleClose();
                                 })
                                 .catch((err) => {
@@ -279,49 +349,75 @@ function FilterTableHeader() {
                         {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, handleReset, touched, values, resetForm }) => (
                             <form noValidate onSubmit={handleSubmit}>
                                 <Typography variant="h4" sx={{ padding: '25px', borderBottom: '1px solid rgb(240, 240, 240)' }}>
-                                    Add User
+                                    Add Vehicule
                                 </Typography>
-                                <Grid container spacing={3} sx={{ padding: '10px 20px' }}>
-                                    <Grid item xs={12}>
-                                        <Grid item xs={12} sx={{ mt: 1 }}>
+                                <Grid container spacing={3} sx={{ padding: '10px 40px', margin: '0px 0px' }}>
+                                    <Grid item xs={12} style={{ paddingLeft: '0px' }} md={4}>
+                                        <InputLabel>Image*</InputLabel>
+                                        <Upload
+                                            beforeUpload={beforeUpload}
+                                            listType="picture-circle"
+                                            fileList={fileList}
+                                            onPreview={handlePreview}
+                                            onChange={handleChangee}
+                                            accept=".png, .jpg, .jpeg"
+                                        >
+                                            {fileList.length ? null : uploadButton}
+                                        </Upload>
+                                        <Modal open={previewOpen} title={previewTitle} footer={null} onClick={handleCancel}>
+                                            <img
+                                                alt="example"
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: '50%',
+                                                    transform: 'translate(-50%, -50%)',
+                                                    width: '30%'
+                                                }}
+                                                src={previewImage}
+                                            />
+                                        </Modal>
+                                    </Grid>
+                                    <Grid container spacing={2} xs={12} md={8}>
+                                        <Grid item xs={6} md={6}>
                                             <Stack spacing={1}>
-                                                <InputLabel htmlFor="user-signup">Name*</InputLabel>
+                                                <InputLabel htmlFor="matricule">Matricule*</InputLabel>
                                                 <OutlinedInput
-                                                    id="user-login"
-                                                    type="name"
-                                                    value={values.name}
-                                                    name="name"
+                                                    id="matricule"
+                                                    type="text"
+                                                    value={values.matricule}
+                                                    name="matricule"
                                                     onBlur={handleBlur}
                                                     onChange={handleChange}
-                                                    placeholder="Name"
+                                                    placeholder="matricule"
                                                     fullWidth
-                                                    error={Boolean(touched.name && errors.name)}
+                                                    // error={Boolean(touched.matricule && errors.matricule)}
                                                 />
-                                                {touched.name && errors.name && (
-                                                    <FormHelperText error id="helper-text-name-signup">
-                                                        {errors.name}
+                                                {touched.matricule && errors.matricule && (
+                                                    <FormHelperText error id="helper-text-matricule-signup">
+                                                        {errors.matricule}
                                                     </FormHelperText>
                                                 )}
                                             </Stack>
                                         </Grid>
-                                        <Grid item xs={12} sx={{ mt: 1 }}>
+                                        <Grid item xs={6} md={6}>
                                             <Stack spacing={1}>
-                                                <InputLabel htmlFor="telephone-signup">Phone Number*</InputLabel>
+                                                <InputLabel htmlFor="marque">Marque*</InputLabel>
                                                 <OutlinedInput
                                                     fullWidth
-                                                    error={Boolean(touched.telephone && errors.telephone)}
-                                                    // id="telephone-signup"
-                                                    type="telephone"
-                                                    value={values.telephone}
-                                                    name="telephone"
+                                                    // error={Boolean(touched.marque && errors.marque)}
+                                                    id="marque"
+                                                    type="text"
+                                                    value={values.marque}
+                                                    name="marque"
                                                     onBlur={handleBlur}
                                                     onChange={handleChange}
-                                                    placeholder="Phone number"
+                                                    placeholder="marque"
                                                     inputProps={{}}
                                                 />
-                                                {touched.telephone && errors.telephone && (
-                                                    <FormHelperText error id="helper-text-telephone-signup">
-                                                        {errors.telephone}
+                                                {touched.marque && errors.marque && (
+                                                    <FormHelperText error id="helper-text-marque-signup">
+                                                        {errors.marque}
                                                     </FormHelperText>
                                                 )}
                                             </Stack>
@@ -329,80 +425,109 @@ function FilterTableHeader() {
 
                                         <Grid item xs={12} sx={{ mt: 1 }}>
                                             <Stack spacing={1}>
-                                                <InputLabel htmlFor="email-signup">Email*</InputLabel>
+                                                <InputLabel htmlFor="numero_serie">Numero serie*</InputLabel>
                                                 <OutlinedInput
                                                     fullWidth
-                                                    error={Boolean(touched.email && errors.email)}
-                                                    id="email"
-                                                    type="email"
-                                                    value={values.email}
-                                                    name="email"
+                                                    // error={Boolean(touched.numero_serie && errors.numero_serie)}
+                                                    id="numero_serie"
+                                                    type="text"
+                                                    value={values.numero_serie}
+                                                    name="numero_serie"
                                                     onBlur={handleBlur}
                                                     onChange={handleChange}
-                                                    placeholder="email@email.com"
+                                                    placeholder="numero serie"
                                                     inputProps={{}}
                                                 />
-                                                {touched.email && errors.email && (
-                                                    <FormHelperText error id="helper-text-email-signup">
-                                                        {errors.email}
+                                                {touched.numero_serie && errors.numero_serie && (
+                                                    <FormHelperText error id="helper-text-numero_serie-signup">
+                                                        {errors.numero_serie}
                                                     </FormHelperText>
                                                 )}
                                             </Stack>
                                         </Grid>
 
-                                        <Grid item xs={12} sx={{ mt: 1 }}>
+                                        <Grid item xs={6} md={12}>
                                             <Stack spacing={1}>
-                                                <InputLabel htmlFor="password-login">Password*</InputLabel>
+                                                <InputLabel htmlFor="date_circulation">Date circulation*</InputLabel>
                                                 <OutlinedInput
                                                     fullWidth
-                                                    error={Boolean(touched.password && errors.password)}
-                                                    id="password"
-                                                    type={showPassword ? 'text' : 'password'}
-                                                    value={values.password}
-                                                    name="password"
+                                                    // error={Boolean(touched.date_circulation && errors.date_circulation)}
+                                                    id="date_circulation"
+                                                    type="date"
+                                                    value={values.date_circulation}
+                                                    name="date_circulation"
                                                     onBlur={handleBlur}
                                                     onChange={handleChange}
-                                                    placeholder="Enter password"
-                                                    endAdornment={
-                                                        <InputAdornment position="end">
-                                                            <IconButton
-                                                                aria-label="toggle password visibility"
-                                                                onClick={handleClickShowPassword}
-                                                                onMouseDown={handleMouseDownPassword}
-                                                                edge="end"
-                                                                size="large"
-                                                            >
-                                                                {showPassword ? <EyeOutlined /> : <EyeInvisibleOutlined />}
-                                                            </IconButton>
-                                                        </InputAdornment>
-                                                    }
+                                                    placeholder="date circulation"
                                                 />
-                                                {touched.password && errors.password && (
-                                                    <FormHelperText error id="helper-text-password-signup">
-                                                        {errors.password}
+                                                {touched.date_circulation && errors.date_circulation && (
+                                                    <FormHelperText error id="helper-text-date_circulation-signup">
+                                                        {errors.date_circulation}
+                                                    </FormHelperText>
+                                                )}
+                                            </Stack>
+                                        </Grid>
+                                        <Grid item xs={6} md={12}>
+                                            <Stack spacing={1}>
+                                                <InputLabel htmlFor="capacite">Capacite*</InputLabel>
+                                                <OutlinedInput
+                                                    fullWidth
+                                                    // error={Boolean(touched.capacite && errors.capacite)}
+                                                    id="capacite"
+                                                    type="number"
+                                                    value={values.capacite}
+                                                    name="capacite"
+                                                    onBlur={handleBlur}
+                                                    onChange={handleChange}
+                                                    placeholder="date circulation"
+                                                />
+                                                {touched.capacite && errors.capacite && (
+                                                    <FormHelperText error id="helper-text-capacite-signup">
+                                                        {errors.capacite}
+                                                    </FormHelperText>
+                                                )}
+                                            </Stack>
+                                        </Grid>
+                                        <Grid item xs={6} md={12}>
+                                            <Stack spacing={1}>
+                                                <InputLabel htmlFor="capacite">Typevehicule*</InputLabel>
+                                                <OutlinedInput
+                                                    fullWidth
+                                                    // error={Boolean(touched.typevehicule_id && errors.typevehicule_id)}
+                                                    id="typevehicule_id"
+                                                    type="number"
+                                                    value={values.typevehicule_id}
+                                                    name="typevehicule_id"
+                                                    onBlur={handleBlur}
+                                                    onChange={handleChange}
+                                                    placeholder="date circulation"
+                                                />
+                                                {touched.typevehicule_id && errors.typevehicule_id && (
+                                                    <FormHelperText error id="helper-text-typevehicule_id-signup">
+                                                        {errors.typevehicule_id}
                                                     </FormHelperText>
                                                 )}
                                             </Stack>
                                         </Grid>
 
-                                        <Grid item xs={12} sx={{ mt: 1 }}>
+                                        <Grid item xs={6} md={12}>
                                             <Stack spacing={1}>
-                                                <InputLabel htmlFor="role-signup">role*</InputLabel>
+                                                <InputLabel htmlFor="status">Status*</InputLabel>
 
                                                 <FormControl>
                                                     <Select
                                                         fullWidth
-                                                        error={Boolean(touched.role && errors.role)}
-                                                        id="role"
-                                                        value={values.role}
-                                                        name="role"
+                                                        // error={Boolean(touched.status && errors.status)}
+                                                        id="status"
+                                                        value={values.status}
+                                                        name="status"
                                                         required
                                                         onBlur={handleBlur}
                                                         onChange={handleChange}
                                                         inputProps={{ 'aria-label': 'Without label' }}
                                                     >
                                                         <MenuItem value="" sx={{ color: 'text.secondary' }}>
-                                                            Select role
+                                                            Select status
                                                         </MenuItem>
                                                         <MenuItem value="1">Admin</MenuItem>
                                                         <MenuItem value="2">Viewer</MenuItem>
@@ -417,7 +542,6 @@ function FilterTableHeader() {
                                             </Stack>
                                         </Grid>
                                     </Grid>
-
                                     {errors.submit && (
                                         <Grid item xs={12}>
                                             <FormHelperText error>{errors.submit}</FormHelperText>
@@ -436,7 +560,7 @@ function FilterTableHeader() {
                                             Cancel
                                         </Button>
                                         <Button variant="contained" type="submit">
-                                            Add User
+                                            Add Vehicule
                                         </Button>
                                     </Grid>
                                 </Grid>
@@ -454,12 +578,55 @@ function FilterTableHeader() {
 //     handleClose: PropTypes.func.isRequired
 // };
 // ==============================|| EDIT ||============================== //
-function EditUser({ open, handleClose, handleOpen, handleEdit, editItem }) {
+function EditVehicule({ open, handleClose, handleOpen, handleEdit, editItem }) {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { records, loading, error } = useSelector((state) => state.users);
+    const [baseUrl, setBaseUrl] = useState('');
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewImage, setPreviewImage] = useState('');
+    const [previewTitle, setPreviewTitle] = useState('');
+    const [fileList, setFileList] = useState([]);
+    const { records, loading, error } = useSelector((state) => state.vehicules);
 
     const phoneRegExp = /^((\\+[1-9]{1,4}[ \\-]*)|(\\([0-9]{2,3}\\)[ \\-]*)|([0-9]{2,4})[ \\-]*)*?[0-9]{3,4}?[ \\-]*[0-9]{3,4}?$/;
+    const beforeUpload = (file) => {
+        return false;
+    };
+    const handleCancel = () => setPreviewOpen(false);
+    const handlePreview = async (file) => {
+        if (!file.url && !file.preview) {
+            file.preview = await getBase64(file.originFileObj);
+        }
+        setPreviewImage(file.url || file.preview);
+        setPreviewOpen(true);
+        setPreviewTitle(file.name || file.url.substring(file.url.lastIndexOf('/') + 1));
+    };
+
+    // const handleChangee = ({ fileList: newFileList }) => setFileList(newFileList);
+    const handleChangee = ({ fileList: newFileList }) => {
+        // Loop through each uploaded file
+        newFileList.forEach(async (file) => {
+            if (!file.url && !file.preview) {
+                file.preview = await getBase64(file.originFileObj);
+            }
+            const base64Image = file.preview; // Extract the base64 representation
+            setBaseUrl(base64Image); // Log the base64 image to the console
+        });
+
+        setFileList(newFileList);
+    };
+    const uploadButton = (
+        <div>
+            <PlusOutlined />
+            <div
+                style={{
+                    marginTop: 8
+                }}
+            >
+                Upload
+            </div>
+        </div>
+    );
 
     const style = {
         position: 'absolute',
@@ -495,11 +662,23 @@ function EditUser({ open, handleClose, handleOpen, handleEdit, editItem }) {
                         role: Yup.string().ensure().required('Role is required!')
                     })}
                     onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
-                        dispatch(editUser(values))
+                        dispatch(
+                            editVehicule({
+                                id: values.id,
+                                image: baseUrl,
+                                matricule: values.matricule,
+                                numero_serie: values.numero_serie,
+                                marque: values.marque,
+                                date_circulation: values.date_circulation,
+                                capacite: values.capacite,
+                                typevehicule_id: values.typevehicule_id,
+                                status: values.status
+                            })
+                        )
                             .unwrap()
                             .then(() => {
-                                dispatch(fetchUsers());
-                                navigate('/users');
+                                dispatch(fetchVehicules());
+                                navigate('/Vehicules');
                                 handleClose();
                             });
                     }}
@@ -507,49 +686,76 @@ function EditUser({ open, handleClose, handleOpen, handleEdit, editItem }) {
                     {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, handleReset, touched, values, resetForm }) => (
                         <form noValidate onSubmit={handleSubmit}>
                             <Typography variant="h4" sx={{ padding: '25px', borderBottom: '1px solid rgb(240, 240, 240)' }}>
-                                Edit User
+                                Edit Vehicule
                             </Typography>
-                            <Grid container spacing={3} sx={{ padding: '10px 20px' }}>
-                                <Grid item xs={12}>
-                                    <Grid item xs={12} sx={{ mt: 1 }}>
+                            <Grid container spacing={3} sx={{ padding: '10px 40px', margin: '0px 0px' }}>
+                                <Grid item xs={12} style={{ paddingLeft: '0px' }} md={4}>
+                                    <InputLabel>Image*</InputLabel>
+                                    <Upload
+                                        beforeUpload={beforeUpload}
+                                        listType="picture-circle"
+                                        fileList={fileList}
+                                        onPreview={handlePreview}
+                                        onChange={handleChangee}
+                                        value={values.image}
+                                        accept=".png, .jpg, .jpeg"
+                                    >
+                                        {fileList.length ? null : uploadButton}
+                                    </Upload>
+                                    <Modal open={previewOpen} title={previewTitle} footer={null} onClick={handleCancel}>
+                                        <img
+                                            alt="example"
+                                            style={{
+                                                position: 'absolute',
+                                                top: '50%',
+                                                left: '50%',
+                                                transform: 'translate(-50%, -50%)',
+                                                width: '30%'
+                                            }}
+                                            src={previewImage}
+                                        />
+                                    </Modal>
+                                </Grid>
+                                <Grid container spacing={2} xs={12} md={8}>
+                                    <Grid item xs={6} md={6}>
                                         <Stack spacing={1}>
-                                            <InputLabel htmlFor="user-signup">Name*</InputLabel>
+                                            <InputLabel htmlFor="matricule">Matricule*</InputLabel>
                                             <OutlinedInput
-                                                id="user-login"
-                                                type="name"
-                                                value={values.name}
-                                                name="name"
+                                                id="matricule"
+                                                type="text"
+                                                value={values.matricule}
+                                                name="matricule"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
-                                                placeholder="Name"
+                                                placeholder="matricule"
                                                 fullWidth
-                                                error={Boolean(touched.name && errors.name)}
+                                                // error={Boolean(touched.matricule && errors.matricule)}
                                             />
-                                            {touched.name && errors.name && (
-                                                <FormHelperText error id="helper-text-name-signup">
-                                                    {errors.name}
+                                            {touched.matricule && errors.matricule && (
+                                                <FormHelperText error id="helper-text-matricule-signup">
+                                                    {errors.matricule}
                                                 </FormHelperText>
                                             )}
                                         </Stack>
                                     </Grid>
-                                    <Grid item xs={12} sx={{ mt: 1 }}>
+                                    <Grid item xs={6} md={6}>
                                         <Stack spacing={1}>
-                                            <InputLabel htmlFor="telephone-signup">Phone Number*</InputLabel>
+                                            <InputLabel htmlFor="marque">Marque*</InputLabel>
                                             <OutlinedInput
                                                 fullWidth
-                                                error={Boolean(touched.telephone && errors.telephone)}
-                                                id="telephone-signup"
-                                                type="telephone"
-                                                value={values.telephone}
-                                                name="telephone"
+                                                // error={Boolean(touched.marque && errors.marque)}
+                                                id="marque"
+                                                type="text"
+                                                value={values.marque}
+                                                name="marque"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
-                                                placeholder="Phone number"
+                                                placeholder="marque"
                                                 inputProps={{}}
                                             />
-                                            {touched.telephone && errors.telephone && (
-                                                <FormHelperText error id="helper-text-telephone-signup">
-                                                    {errors.telephone}
+                                            {touched.marque && errors.marque && (
+                                                <FormHelperText error id="helper-text-marque-signup">
+                                                    {errors.marque}
                                                 </FormHelperText>
                                             )}
                                         </Stack>
@@ -557,45 +763,109 @@ function EditUser({ open, handleClose, handleOpen, handleEdit, editItem }) {
 
                                     <Grid item xs={12} sx={{ mt: 1 }}>
                                         <Stack spacing={1}>
-                                            <InputLabel htmlFor="email-signup">Email*</InputLabel>
+                                            <InputLabel htmlFor="numero_serie">Numero serie*</InputLabel>
                                             <OutlinedInput
                                                 fullWidth
-                                                error={Boolean(touched.email && errors.email)}
-                                                id="email"
-                                                type="email"
-                                                value={values.email}
-                                                name="email"
+                                                // error={Boolean(touched.numero_serie && errors.numero_serie)}
+                                                id="numero_serie"
+                                                type="text"
+                                                value={values.numero_serie}
+                                                name="numero_serie"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
-                                                placeholder="email@email.com"
+                                                placeholder="numero serie"
                                                 inputProps={{}}
                                             />
-                                            {touched.email && errors.email && (
-                                                <FormHelperText error id="helper-text-email-signup">
-                                                    {errors.email}
+                                            {touched.numero_serie && errors.numero_serie && (
+                                                <FormHelperText error id="helper-text-numero_serie-signup">
+                                                    {errors.numero_serie}
                                                 </FormHelperText>
                                             )}
                                         </Stack>
                                     </Grid>
 
-                                    <Grid item xs={12} sx={{ mt: 1 }}>
+                                    <Grid item xs={6} md={12}>
                                         <Stack spacing={1}>
-                                            <InputLabel htmlFor="role-signup">role*</InputLabel>
+                                            <InputLabel htmlFor="date_circulation">Date circulation*</InputLabel>
+                                            <OutlinedInput
+                                                fullWidth
+                                                // error={Boolean(touched.date_circulation && errors.date_circulation)}
+                                                id="date_circulation"
+                                                type="date"
+                                                value={values.date_circulation}
+                                                name="date_circulation"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                placeholder="date circulation"
+                                            />
+                                            {touched.date_circulation && errors.date_circulation && (
+                                                <FormHelperText error id="helper-text-date_circulation-signup">
+                                                    {errors.date_circulation}
+                                                </FormHelperText>
+                                            )}
+                                        </Stack>
+                                    </Grid>
+                                    <Grid item xs={6} md={12}>
+                                        <Stack spacing={1}>
+                                            <InputLabel htmlFor="capacite">Capacite*</InputLabel>
+                                            <OutlinedInput
+                                                fullWidth
+                                                // error={Boolean(touched.capacite && errors.capacite)}
+                                                id="capacite"
+                                                type="number"
+                                                value={values.capacite}
+                                                name="capacite"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                placeholder="date circulation"
+                                            />
+                                            {touched.capacite && errors.capacite && (
+                                                <FormHelperText error id="helper-text-capacite-signup">
+                                                    {errors.capacite}
+                                                </FormHelperText>
+                                            )}
+                                        </Stack>
+                                    </Grid>
+                                    <Grid item xs={6} md={12}>
+                                        <Stack spacing={1}>
+                                            <InputLabel htmlFor="capacite">Typevehicule*</InputLabel>
+                                            <OutlinedInput
+                                                fullWidth
+                                                // error={Boolean(touched.typevehicule_id && errors.typevehicule_id)}
+                                                id="typevehicule_id"
+                                                type="number"
+                                                value={values.typevehicule_id}
+                                                name="typevehicule_id"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                placeholder="date circulation"
+                                            />
+                                            {touched.typevehicule_id && errors.typevehicule_id && (
+                                                <FormHelperText error id="helper-text-typevehicule_id-signup">
+                                                    {errors.typevehicule_id}
+                                                </FormHelperText>
+                                            )}
+                                        </Stack>
+                                    </Grid>
+
+                                    <Grid item xs={6} md={12}>
+                                        <Stack spacing={1}>
+                                            <InputLabel htmlFor="status">Status*</InputLabel>
 
                                             <FormControl>
                                                 <Select
                                                     fullWidth
-                                                    error={Boolean(touched.role && errors.role)}
-                                                    id="role"
-                                                    value={values.role}
-                                                    name="role"
+                                                    // error={Boolean(touched.status && errors.status)}
+                                                    id="status"
+                                                    value={values.status}
+                                                    name="status"
                                                     required
                                                     onBlur={handleBlur}
                                                     onChange={handleChange}
                                                     inputProps={{ 'aria-label': 'Without label' }}
                                                 >
                                                     <MenuItem value="" sx={{ color: 'text.secondary' }}>
-                                                        Select role
+                                                        Select status
                                                     </MenuItem>
                                                     <MenuItem value="1">Admin</MenuItem>
                                                     <MenuItem value="2">Viewer</MenuItem>
@@ -610,7 +880,6 @@ function EditUser({ open, handleClose, handleOpen, handleEdit, editItem }) {
                                         </Stack>
                                     </Grid>
                                 </Grid>
-
                                 {errors.submit && (
                                     <Grid item xs={12}>
                                         <FormHelperText error>{errors.submit}</FormHelperText>
@@ -629,7 +898,7 @@ function EditUser({ open, handleClose, handleOpen, handleEdit, editItem }) {
                                         Cancel
                                     </Button>
                                     <Button variant="contained" type="submit">
-                                        Edit User
+                                        Edit Vehicule
                                     </Button>
                                 </Grid>
                             </Grid>
@@ -664,7 +933,7 @@ function DeleteModal({ open, handleOpen, handleClose, handleDelete }) {
                         Cancel
                     </Button>
                     <Button variant="contained" onClick={handleDelete}>
-                        Delete User
+                        Delete Vehicule
                     </Button>
                 </DialogActions>
             </Box>
@@ -767,8 +1036,8 @@ OrderStatus.propTypes = {
 
 // ==============================|| ORDER TABLE ||============================== //
 
-export default function Userslist() {
-    const { records, loading, error } = useSelector((state) => state.users);
+export default function Vehiculeslist() {
+    const { records, loading, error } = useSelector((state) => state.vehicules);
     const rows = records;
 
     const [order] = useState('asc');
@@ -789,12 +1058,12 @@ export default function Userslist() {
     const [visibleRows, setvisibleRows] = useState(InitialRows);
     useMemo(() => setvisibleRows(rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)), [page, rowsPerPage, records]);
 
-    const deleteRecord = useCallback((id) => dispatch(deleteUser(id)), [dispatch]);
+    const deleteRecord = useCallback((id) => dispatch(deleteVehicule(id)), [dispatch]);
 
     const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
 
     useEffect(() => {
-        dispatch(fetchUsers());
+        dispatch(fetchVehicules());
     }, [dispatch]);
 
     const OpenEdit = () => setOpenEdit(!openEdit);
@@ -864,7 +1133,13 @@ export default function Userslist() {
                 >
                     <OrderTableHead order={order} orderBy={orderBy} onSelectAllClick={handleSelectAllClick} />
                     <DeleteModal open={openDelete} handleOpen={OpenDelete} handleClose={closeDelete} handleDelete={handleDelete} />
-                    <EditUser open={openEdit} handleOpen={OpenEdit} handleClose={closeEdit} handleEdit={handleEdit} editItem={editItem} />
+                    <EditVehicule
+                        open={openEdit}
+                        handleOpen={OpenEdit}
+                        handleClose={closeEdit}
+                        handleEdit={handleEdit}
+                        editItem={editItem}
+                    />
                     <TableBody>
                         {visibleRows.map((row, index) => {
                             const isItemSelected = isSelected(row.id);
@@ -893,14 +1168,19 @@ export default function Userslist() {
                                         <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
                                             {/* <Box>
                                                 <Avatar src={user1} alt="user1" />
-                                            </Box> */}
-                                            <Box sx={{ ml: 1 }}>{row.name}</Box>
+                                            </Box>
+                                            <Box sx={{ ml: 1 }}>{row.name}</Box> */}
+                                            <Avatar src={row.image} alt="ii" />
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="left">{row.email}</TableCell>
-                                    <TableCell align="left">{row.telephone}</TableCell>
+                                    <TableCell align="left">{row.matricule}</TableCell>
+                                    <TableCell align="left">{row.numero_serie}</TableCell>
+                                    <TableCell align="left">{row.marque}</TableCell>
+                                    <TableCell align="left">{row.date_circulation}</TableCell>
+                                    <TableCell align="left">{row.capacite}</TableCell>
+                                    <TableCell align="left">{row.typevehicule_id}</TableCell>
                                     <TableCell align="left">
-                                        <OrderStatus status={row.role_id} />
+                                        <OrderStatus status={row.status} />
                                     </TableCell>
                                     <TableCell sx={{ display: 'flex', justifyContent: 'flex-start', gap: '20px', padding: '23px' }}>
                                         <EditIcon style={{ cursor: 'pointer' }} onClick={() => editHandler(row)}>

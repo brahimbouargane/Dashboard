@@ -5,10 +5,10 @@ const initialState = { records: [], loading: false, error: null, record: null };
 const API = process.env.REACT_APP_BASE_URL;
 const token = localStorage.getItem('token');
 
-export const fetchUsers = createAsyncThunk('users/fetchUsers', async (_, thunkAPI) => {
+export const fetchSocietes = createAsyncThunk('Societes/fetchSocietes', async (_, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
-        const res = await axios.get(`${API}User`, {
+        const res = await axios.get(`${API}Societe`, {
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
         });
         return res.data;
@@ -17,21 +17,21 @@ export const fetchUsers = createAsyncThunk('users/fetchUsers', async (_, thunkAP
     }
 });
 
-export const fetchUser = createAsyncThunk('users/fetchUser', async (id, thunkAPI) => {
-    const { rejectWithValue } = thunkAPI;
-    try {
-        const res = await fetch(`${API}User/${id}`);
-        const data = await res.json();
-        return data;
-    } catch (error) {
-        return rejectWithValue(error.message);
-    }
-});
+// export const fetchUser = createAsyncThunk('users/fetchUser', async (id, thunkAPI) => {
+//     const { rejectWithValue } = thunkAPI;
+//     try {
+//         const res = await fetch(`${API}User/${id}`);
+//         const data = await res.json();
+//         return data;
+//     } catch (error) {
+//         return rejectWithValue(error.message);
+//     }
+// });
 
-export const deleteUser = createAsyncThunk('users/deleteUser', async (id, thunkAPI) => {
+export const deleteSociete = createAsyncThunk('Societes/deleteSociete', async (id, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
-        await fetch(`${API}User/${id}`, {
+        await fetch(`${API}Societe/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -41,23 +41,24 @@ export const deleteUser = createAsyncThunk('users/deleteUser', async (id, thunkA
     }
 });
 
-export const insertUser = createAsyncThunk('users/insertUser', async (item, thunkAPI) => {
+export const insertSociete = createAsyncThunk('Societes/insertSociete', async (item, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     // const { auth } = getState();
     // item.userId = auth.id;
 
     try {
         const res = await axios.post(
-            `${API}User`,
+            `${API}Societe`,
             {
+                logo: item.logo,
+                societe: item.societe,
                 email: item.email,
-                name: item.name,
+                responsable: item.responsable,
+                adresse: item.adresse,
                 telephone: item.telephone,
-                password: item.password,
-                role_id: item.role_id
+                fix: item.fix
             },
             {
-                body: JSON.stringify(item),
                 headers: {
                     'Content-type': 'application/json; charset=UTF-8',
                     Authorization: `Bearer ${token}`
@@ -72,16 +73,19 @@ export const insertUser = createAsyncThunk('users/insertUser', async (item, thun
     }
 });
 
-export const editUser = createAsyncThunk('users/editUser', async (item, thunkAPI) => {
+export const editSociete = createAsyncThunk('Societes/editSociete', async (item, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
         const res = await axios.patch(
-            `${API}User/${item.id}`,
+            `${API}Societe/${item.id}`,
             {
+                logo: item.logo,
+                societe: item.societe,
                 email: item.email,
-                name: item.name,
+                responsable: item.responsable,
+                adresse: item.adresse,
                 telephone: item.telephone,
-                role_id: item.role_id
+                fix: item.fix
             },
             {
                 body: JSON.stringify(item),
@@ -99,8 +103,8 @@ export const editUser = createAsyncThunk('users/editUser', async (item, thunkAPI
     }
 });
 
-const userSlice = createSlice({
-    name: 'users',
+const societeSlice = createSlice({
+    name: 'Societes',
     initialState,
     reducers: {
         cleanRecord: (state) => {
@@ -110,72 +114,72 @@ const userSlice = createSlice({
 
     extraReducers: {
         //get one user post
-        [fetchUser.pending]: (state) => {
-            state.loading = true;
-            state.error = null;
-        },
-        [fetchUser.fulfilled]: (state, action) => {
-            state.loading = false;
-            state.record = action.payload;
-        },
-        [fetchUser.rejected]: (state, action) => {
-            state.loading = false;
-            state.error = action.payload;
-        },
+        // [fetchUser.pending]: (state) => {
+        //     state.loading = true;
+        //     state.error = null;
+        // },
+        // [fetchUser.fulfilled]: (state, action) => {
+        //     state.loading = false;
+        //     state.record = action.payload;
+        // },
+        // [fetchUser.rejected]: (state, action) => {
+        //     state.loading = false;
+        //     state.error = action.payload;
+        // },
         //fetch users
-        [fetchUsers.pending]: (state) => {
+        [fetchSocietes.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [fetchUsers.fulfilled]: (state, action) => {
+        [fetchSocietes.fulfilled]: (state, action) => {
             state.loading = false;
             state.records = action.payload;
         },
-        [fetchUsers.rejected]: (state, action) => {
+        [fetchSocietes.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         },
         //create user
-        [insertUser.pending]: (state) => {
+        [insertSociete.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [insertUser.fulfilled]: (state, action) => {
+        [insertSociete.fulfilled]: (state, action) => {
             state.loading = false;
             state.records.push(action.payload);
         },
-        [insertUser.rejected]: (state, action) => {
+        [insertSociete.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         },
         //delete user
-        [deleteUser.pending]: (state) => {
+        [deleteSociete.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [deleteUser.fulfilled]: (state, action) => {
+        [deleteSociete.fulfilled]: (state, action) => {
             state.loading = false;
             state.records = state.records.filter((el) => el.id !== action.payload);
         },
-        [deleteUser.rejected]: (state, action) => {
+        [deleteSociete.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         },
 
         //edit user
-        [editUser.pending]: (state) => {
+        [editSociete.pending]: (state) => {
             state.loading = true;
             state.error = null;
         },
-        [editUser.fulfilled]: (state, action) => {
+        [editSociete.fulfilled]: (state, action) => {
             state.loading = false;
             state.record = action.payload;
         },
-        [editUser.rejected]: (state, action) => {
+        [editSociete.rejected]: (state, action) => {
             state.loading = false;
             state.error = action.payload;
         }
     }
 });
 
-export default userSlice.reducer;
+export default societeSlice.reducer;
